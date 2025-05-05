@@ -1,0 +1,53 @@
+# Environnement virtuel
+venv*/
+.env/
+.venv/
+
+# Cache Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+
+# Fichiers temporaires
+*.log
+*.tmp
+*.bak
+.DS_Store
+Thumbs.db
+
+# Fichiers de configuration VSCode ou PyCharm
+.vscode/
+.idea/
+
+# Résultats de traitement (output)
+data_traite_sans_correction_n4
+data/
+data_traite/
+pngData/
+*.png
+*.nii
+*.nii.gz
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Fichiers générés automatiquement
+*.swp
+*.swo
+
+# TQDM bars
+tqdm.log
+
+# Test reports / coverage
+htmlcov/
+.tox/
+.coverage
+nosetests.xml
+pytest_cache/
+
+# Fichiers de builds éventuels
+build/
+dist/
+*.egg-info/
