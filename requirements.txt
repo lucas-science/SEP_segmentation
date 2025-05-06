@@ -1,4 +1,5 @@
 numpy
 SimpleITK
 tqdm
+matplotlib
 https://github.com/ANTsX/ANTsPy/releases/download/v0.3.8/antspyx-0.3.8-cp310-cp310-win_amd64.whl

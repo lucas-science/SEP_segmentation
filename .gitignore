@@ -25,7 +25,8 @@ Thumbs.db
 data_traite_sans_correction_n4
 data/
 data_traite/
-pngData/
+outputs/
+UNet_data_png/
 *.png
 *.nii
 *.nii.gz
@@ -36,6 +37,7 @@ pngData/
 # Fichiers générés automatiquement
 *.swp
 *.swo
+*.png
 
 # TQDM bars
 tqdm.log
