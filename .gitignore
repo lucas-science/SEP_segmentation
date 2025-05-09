@@ -27,6 +27,7 @@ data/
 data_traite/
 outputs/
 UNet_data_png/
+UNeXt/
 *.nii
 *.nii.gz
 
