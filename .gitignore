@@ -27,7 +27,6 @@ data/
 data_traite/
 outputs/
 UNet_data_png/
-*.png
 *.nii
 *.nii.gz
 
@@ -37,7 +36,7 @@ UNet_data_png/
 # Fichiers générés automatiquement
 *.swp
 *.swo
-*.png
+*.pth
 
 # TQDM bars
 tqdm.log
