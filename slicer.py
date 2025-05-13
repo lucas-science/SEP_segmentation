@@ -5,7 +5,7 @@ import SimpleITK as sitk
 import matplotlib.pyplot as plt
 from skimage.transform import resize
 
-def flexible_slicer(data_dir, output_dir, orientation, structure, target_size):
+def flexible_slicer(data_dir, output_dir, orientation, structure, target_size, max_empty_ratio=None):
     os.makedirs(output_dir, exist_ok=True)
     slice_counter = 0
 
@@ -39,10 +39,27 @@ def flexible_slicer(data_dir, output_dir, orientation, structure, target_size):
         else:
             raise ValueError("Orientation invalide : axial, sagittal ou coronal")
 
+        slice_info = []
         for i in range(flair_slices.shape[0]):
             flair_slice = flair_slices[i, :, :]
             mask_slice = mask_slices[i, :, :]
+            is_empty = np.sum(mask_slice) == 0
+            slice_info.append((i, flair_slice, mask_slice, is_empty))
 
+        if max_empty_ratio is not None:
+            non_empty_slices = [s for s in slice_info if not s[3]]
+            empty_slices = [s for s in slice_info if s[3]]
+
+            max_empty = int(max_empty_ratio * len(slice_info))
+            np.random.shuffle(empty_slices)
+            kept_empty_slices = empty_slices[:max_empty]
+
+            final_slices = non_empty_slices + kept_empty_slices
+            final_slices.sort(key=lambda x: x[0])
+        else:
+            final_slices = slice_info
+
+        for i, flair_slice, mask_slice, _ in final_slices:
             flair_slice = (flair_slice - np.min(flair_slice)) / (np.ptp(flair_slice) + 1e-8)
             flair_slice = resize(flair_slice, target_size, preserve_range=True).astype(np.uint8)
             mask_slice = (mask_slice > 0).astype(np.uint8) * 255
@@ -68,7 +85,7 @@ def flexible_slicer(data_dir, output_dir, orientation, structure, target_size):
 
             elif structure == 'unext':
                 image_out = os.path.join(output_dir, 'images')
-                mask_out = os.path.join(output_dir, 'masks', '1')
+                mask_out = os.path.join(output_dir, 'masks', '0')
                 os.makedirs(image_out, exist_ok=True)
                 os.makedirs(mask_out, exist_ok=True)
                 id = f"{slice_counter:04d}"
@@ -77,7 +94,7 @@ def flexible_slicer(data_dir, output_dir, orientation, structure, target_size):
 
             slice_counter += 1
 
-        print(f"[✓] {patient} traité ({flair_slices.shape[0]} slices).")
+        print(f"[✓] {patient} traité ({len(final_slices)} slices).")
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Slice .nii into PNGs with flexible structure.")
@@ -86,8 +103,9 @@ def parse_args():
     parser.add_argument('--orientation', type=str, choices=['axial', 'sagittal', 'coronal'], default='axial', help='Orientation des slices.')
     parser.add_argument('--structure', type=str, choices=['flat', 'per_patient', 'unext'], default='flat', help='Structure de sortie.')
     parser.add_argument('--size', type=int, nargs=2, default=[512, 512], help='Taille des images (largeur hauteur).')
+    parser.add_argument('--max_empty_ratio', type=float, default=None, help='Proportion maximale de slices avec masque vide à conserver (entre 0 et 1).')
     return parser.parse_args()
 
 if __name__ == "__main__":
     args = parse_args()
-    flexible_slicer(args.data_dir, args.output_dir, args.orientation, args.structure, tuple(args.size))
+    flexible_slicer(args.data_dir, args.output_dir, args.orientation, args.structure, tuple(args.size), args.max_empty_ratio)
