@@ -5,7 +5,7 @@ import SimpleITK as sitk
 import matplotlib.pyplot as plt
 from skimage.transform import resize
 
-def flexible_slicer(data_dir, output_dir, orientation, structure, target_size, max_empty_ratio=None):
+def flexible_slicer(data_dir, output_dir, orientation, structure, target_size, max_empty_ratio=None, slice_range=None):
     os.makedirs(output_dir, exist_ok=True)
     slice_counter = 0
 
@@ -24,7 +24,7 @@ def flexible_slicer(data_dir, output_dir, orientation, structure, target_size, m
         flair_img = sitk.ReadImage(flair_path)
         mask_img = sitk.ReadImage(mask_path)
 
-        flair_np = sitk.GetArrayFromImage(flair_img)
+        flair_np = sitk.GetArrayFromImage(flair_img).astype(np.float32)
         mask_np = sitk.GetArrayFromImage(mask_img)
 
         if orientation == 'axial':
@@ -41,6 +41,10 @@ def flexible_slicer(data_dir, output_dir, orientation, structure, target_size, m
 
         slice_info = []
         for i in range(flair_slices.shape[0]):
+            if slice_range is not None:
+                if i < slice_range[0] or i > slice_range[1]:
+                    continue
+
             flair_slice = flair_slices[i, :, :]
             mask_slice = mask_slices[i, :, :]
             is_empty = np.sum(mask_slice) == 0
@@ -61,7 +65,9 @@ def flexible_slicer(data_dir, output_dir, orientation, structure, target_size, m
 
         for i, flair_slice, mask_slice, _ in final_slices:
             flair_slice = (flair_slice - np.min(flair_slice)) / (np.ptp(flair_slice) + 1e-8)
-            flair_slice = resize(flair_slice, target_size, preserve_range=True).astype(np.uint8)
+            flair_slice = resize(flair_slice, target_size, preserve_range=True)
+            flair_slice = (flair_slice * 255).clip(0, 255).astype(np.uint8)
+
             mask_slice = (mask_slice > 0).astype(np.uint8) * 255
             mask_slice = resize(mask_slice, target_size, preserve_range=True).astype(np.uint8)
 
@@ -85,7 +91,7 @@ def flexible_slicer(data_dir, output_dir, orientation, structure, target_size, m
 
             elif structure == 'unext':
                 image_out = os.path.join(output_dir, 'images')
-                mask_out = os.path.join(output_dir, 'masks', '0')
+                mask_out = os.path.join(output_dir, 'masks', '1')
                 os.makedirs(image_out, exist_ok=True)
                 os.makedirs(mask_out, exist_ok=True)
                 id = f"{slice_counter:04d}"
@@ -104,8 +110,17 @@ def parse_args():
     parser.add_argument('--structure', type=str, choices=['flat', 'per_patient', 'unext'], default='flat', help='Structure de sortie.')
     parser.add_argument('--size', type=int, nargs=2, default=[512, 512], help='Taille des images (largeur hauteur).')
     parser.add_argument('--max_empty_ratio', type=float, default=None, help='Proportion maximale de slices avec masque vide à conserver (entre 0 et 1).')
+    parser.add_argument('--slice_range', type=int, nargs=2, default=None, help='Intervalle des slices à conserver (ex: --slice_range 40 90).')
     return parser.parse_args()
 
 if __name__ == "__main__":
     args = parse_args()
-    flexible_slicer(args.data_dir, args.output_dir, args.orientation, args.structure, tuple(args.size), args.max_empty_ratio)
+    flexible_slicer(
+        args.data_dir,
+        args.output_dir,
+        args.orientation,
+        args.structure,
+        tuple(args.size),
+        args.max_empty_ratio,
+        args.slice_range
+    )
